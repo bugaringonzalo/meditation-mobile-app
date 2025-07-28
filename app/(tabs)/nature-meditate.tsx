@@ -14,6 +14,7 @@ import MEDITATION_IMAGES from "@/constants/meditation-images";
 
 import AppGradient from "@/components/AppGradient";
 import { MEDITATION_DATA } from "@/constants/MeditationData";
+import { router } from "expo-router";
 
 const Page = () => {
   return (
@@ -39,7 +40,7 @@ const Page = () => {
             renderItem={({ item }) => (
               <Pressable
                 // onPress={() => router.push(`/meditate/${item.id}`)}
-                onPress={() => console.log("Meditation item pressed")}
+                onPress={() => router.push(`/meditate/${item.id}` as any)}
                 className="h-48 my-3 rounded-md overflow-hidden"
               >
                 <ImageBackground
