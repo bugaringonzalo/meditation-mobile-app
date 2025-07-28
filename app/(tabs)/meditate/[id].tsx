@@ -10,10 +10,19 @@ import { router, useLocalSearchParams } from "expo-router";
 import { CustomButton } from "@/components/CustomButton";
 import { AntDesign } from "@expo/vector-icons";
 
+// import audio
+import { AUDIO_FILES, MEDITATION_DATA } from "@/constants/MeditationData";
+import { Audio } from "expo-av";
+
 const Meditate = () => {
   const { id } = useLocalSearchParams();
   const [secondsRemaining, setSecondsRemaining] = useState(10);
   const [isMeditating, setIsMeditating] = useState(false);
+
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  //audio
+  const [audio, setAudio] = useState<Audio.Sound | null>(null);
 
   useMemo(() => {
     // Reset the timer when the component mounts or id changes
@@ -39,6 +48,44 @@ const Meditate = () => {
 
     return () => clearTimeout(timerId);
   }, [secondsRemaining, isMeditating]);
+
+  const toggleMeditationSessionStatus = async () => {
+    if (isMeditating) {
+      // Stop the meditation session
+      await Audio.setIsEnabledAsync(false);
+    } else {
+      // Start the meditation session
+      await Audio.setIsEnabledAsync(true);
+    }
+    toggleSound();
+    setIsMeditating(!isMeditating);
+    setSecondsRemaining(10); // Reset the timer when starting a new session
+    setIsPlayingAudio(false); // Reset audio state when starting a new session
+    await initializeAudio(); // Initialize audio when starting a new session
+  };
+
+  const initializeAudio = async () => {
+    const audioFileName = MEDITATION_DATA[Number(id) - 1].audio;
+    const { sound } = await Audio.Sound.createAsync(
+      AUDIO_FILES[`${audioFileName}`]
+    );
+    setAudio(sound);
+    return sound;
+  };
+
+  const toggleSound = async () => {
+    const sound = audio ? audio : await initializeAudio();
+
+    const status = await sound?.getStatusAsync();
+
+    if (status?.isLoaded && status?.isPlaying) {
+      await sound.pauseAsync();
+      setIsPlayingAudio(false);
+    } else {
+      await sound.playAsync();
+      setIsPlayingAudio(true);
+    }
+  };
 
   // Format the time left to ensure two digits are displayed
   const formattedTimeMinutes = String(
@@ -74,7 +121,7 @@ const Meditate = () => {
             <CustomButton
               title="Start Meditation"
               onPress={() => {
-                setIsMeditating(!isMeditating);
+                toggleMeditationSessionStatus();
               }}
             />
           </View>
